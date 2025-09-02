@@ -20,7 +20,7 @@ use super::Group;
 macro_rules! decl_int_group {
     ($t:ty, $t_impl:ident) => {
         /// See [`self`].
-        #[derive(Debug, Clone, PartialEq, Eq)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
         pub struct $t_impl(pub $t);
 
         impl Add for $t_impl {
@@ -45,14 +45,29 @@ macro_rules! decl_int_group {
             }
         }
 
-        impl<const BLEN: usize> Group<BLEN> for $t_impl {
+        impl Group<{ size_of::<$t>() }> for $t_impl {
             fn zero() -> Self {
                 $t_impl(0)
             }
         }
 
-        impl<const BLEN: usize> From<[u8; BLEN]> for $t_impl {
-            fn from(value: [u8; BLEN]) -> Self {
+        impl $t_impl {
+            /// Returns the maximum element `2^n - 1`.
+            pub const fn max() -> Self {
+                Self(<$t>::MAX)
+            }
+
+            /// Returns the canonical non-zero element of the group.
+            /// Since this is an additive group, there is no predefined notion of multiplicative
+            /// identity, so we provide it through this custom method for the integer groups,
+            /// instead of as a method of the `Group` trait.
+            pub const fn one() -> Self {
+                Self(1)
+            }
+        }
+
+        impl From<[u8; { size_of::<$t>() }]> for $t_impl {
+            fn from(value: [u8; { size_of::<$t>() }]) -> Self {
                 if cfg!(not(feature = "int-be")) {
                     $t_impl(<$t>::from_le_bytes(
                         (&value[..size_of::<$t>()]).clone().try_into().unwrap(),
@@ -71,9 +86,20 @@ macro_rules! decl_int_group {
             }
         }
 
-        impl<const BLEN: usize> From<$t_impl> for [u8; BLEN] {
+        impl From<bool> for $t_impl {
+            fn from(value: bool) -> Self {
+                if value {
+                    Self::one()
+                } else {
+                    const BLEN: usize = size_of::<$t>();
+                    <Self as Group<BLEN>>::zero()
+                }
+            }
+        }
+
+        impl From<$t_impl> for [u8; { size_of::<$t>() }] {
             fn from(value: $t_impl) -> Self {
-                let mut bs = [0; BLEN];
+                let mut bs = [0; { size_of::<$t>() }];
                 if cfg!(not(feature = "int-be")) {
                     bs[..size_of::<$t>()].copy_from_slice(&value.0.to_le_bytes());
                 } else {

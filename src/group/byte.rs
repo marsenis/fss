@@ -13,7 +13,7 @@ use super::Group;
 use crate::utils::xor_inplace;
 
 /// See [`self`].
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ByteGroup<const BLEN: usize>(pub [u8; BLEN]);
 
 impl<const BLEN: usize> Add for ByteGroup<BLEN> {

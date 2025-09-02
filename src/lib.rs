@@ -10,6 +10,7 @@ use group::Group;
 pub mod dcf;
 pub mod dpf;
 pub mod group;
+pub mod icf;
 #[cfg(feature = "prg")]
 pub mod prg;
 pub mod utils;
@@ -41,7 +42,7 @@ pub trait Prg<const BLEN: usize, const BLEN_N: usize>: Sync {
 }
 
 /// `Cw`. Correclation word.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Cw<const OUT_BLEN: usize, G>
 where
     G: Group<OUT_BLEN>,
@@ -56,7 +57,7 @@ where
 ///
 /// `cws` and `cw_np1` are shared by the 2 parties.
 /// Only `s0s[0]` is different.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Share<const OUT_BLEN: usize, G>
 where
     G: Group<OUT_BLEN>,

@@ -36,6 +36,7 @@ where
 ///
 /// - See [`BoundState`] for available `bound` values.
 /// - See [`PointFn`] for `IN_BLEN`, `OUT_BLEN`, `alpha`, and `beta`.
+#[derive(Debug, Clone)]
 pub struct CmpFn<const IN_BLEN: usize, const OUT_BLEN: usize, G>
 where
     G: Group<OUT_BLEN>,
@@ -300,6 +301,7 @@ where
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum BoundState {
     /// `$f(x) = \beta$` iff. `$x < \alpha$`, otherwise `$f(x) = 0$`.
     ///
@@ -316,10 +318,10 @@ mod tests {
     use arbtest::arbtest;
 
     use super::*;
-    use crate::group::byte::ByteGroup;
     use crate::prg::Aes128MatyasMeyerOseasPrg;
 
-    type GroupImpl = ByteGroup<16>;
+    // type GroupImpl = crate::group::int::U128Group;
+    type GroupImpl = crate::group::byte::ByteGroup<16>;
     type PrgImpl = Aes128MatyasMeyerOseasPrg<16, 2, 4>;
     type DcfImplImpl = DcfImpl<2, 16, PrgImpl>;
 
@@ -404,14 +406,14 @@ mod tests {
                 .collect();
             assert_ys_eq(&ys, &ys_expected, &xs, &alpha);
 
-            let mut ys0_full_eval = vec![ByteGroup::zero(); 1 << filter_bitn];
+            let mut ys0_full_eval = vec![GroupImpl::zero(); 1 << filter_bitn];
             dcf.full_eval(
                 false,
                 &k0,
                 &mut ys0_full_eval.iter_mut().collect::<Vec<_>>(),
             );
             assert_ys_eq(&ys0_full_eval, &ys0, &xs, &alpha);
-            let mut ys1_full_eval = vec![ByteGroup::zero(); 1 << filter_bitn];
+            let mut ys1_full_eval = vec![GroupImpl::zero(); 1 << filter_bitn];
             dcf.full_eval(true, &k1, &mut ys1_full_eval.iter_mut().collect::<Vec<_>>());
             assert_ys_eq(&ys1_full_eval, &ys1, &xs, &alpha);
 
