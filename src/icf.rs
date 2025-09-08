@@ -67,7 +67,7 @@ where
     }
 
     pub fn gen(&self, f: IntvFn, rng: &mut ThreadRng) -> (IcShare, IcShare) {
-        let s0s: [[u8; NUM_BYTES]; 2] = rng.random();
+        let s0s: [[u8; NUM_BYTES]; 2] = rng.gen();
 
         let gamma = f.r_in + IntG::max();
 
@@ -86,7 +86,7 @@ where
         let a_q = self.q + f.r_in;
         let a_q_prime = a_q + IntG::one();
 
-        let z0 = IntG::from(rng.random::<IntGPrimitive>());
+        let z0 = IntG::from(rng.gen::<IntGPrimitive>());
 
         // TODO: Implement comparison for group elements.
         let ind_1 = IntG::from(a_p > a_q);
