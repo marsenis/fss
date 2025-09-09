@@ -6,6 +6,8 @@
 #![cfg_attr(not(feature = "stable"), feature(portable_simd))]
 
 use group::Group;
+use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 
 pub mod dcf;
 pub mod dpf;
@@ -42,11 +44,13 @@ pub trait Prg<const BLEN: usize, const BLEN_N: usize>: Sync {
 }
 
 /// `Cw`. Correclation word.
-#[derive(Debug, Clone)]
+#[serde_as]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Cw<const OUT_BLEN: usize, G>
 where
     G: Group<OUT_BLEN>,
 {
+    #[serde_as(as = "serde_with::Bytes")]
     pub s: [u8; OUT_BLEN],
     pub v: G,
     pub tl: bool,
@@ -57,13 +61,15 @@ where
 ///
 /// `cws` and `cw_np1` are shared by the 2 parties.
 /// Only `s0s[0]` is different.
-#[derive(Debug, Clone)]
+#[serde_as]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Share<const OUT_BLEN: usize, G>
 where
     G: Group<OUT_BLEN>,
 {
     /// For the output of `gen`, its length is 2.
     /// For the input of `eval`, the first one is used.
+    #[serde_as(as = "Vec<serde_with::Bytes>")]
     pub s0s: Vec<[u8; OUT_BLEN]>,
     /// The length of `cws` must be `n = 8 * N`.
     pub cws: Vec<Cw<OUT_BLEN, G>>,

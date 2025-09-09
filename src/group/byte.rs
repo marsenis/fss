@@ -9,12 +9,14 @@
 
 use std::ops::{Add, AddAssign, Neg};
 
+use serde::{Deserialize, Serialize};
+
 use super::Group;
 use crate::utils::xor_inplace;
 
 /// See [`self`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ByteGroup<const BLEN: usize>(pub [u8; BLEN]);
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ByteGroup<const BLEN: usize>(#[serde(with = "serde_byte_array")] pub [u8; BLEN]);
 
 impl<const BLEN: usize> Add for ByteGroup<BLEN> {
     type Output = Self;

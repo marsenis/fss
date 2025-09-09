@@ -5,6 +5,8 @@
 
 use std::ops::{Add, AddAssign, Neg};
 
+use serde::Serialize;
+
 pub mod byte;
 pub mod int;
 pub mod int_prime;
@@ -25,7 +27,8 @@ where
         + Clone
         + Sync
         + Send
-        + From<[u8; BLEN]>,
+        + From<[u8; BLEN]>
+        + Serialize,
 {
     /// Identity element.
     ///

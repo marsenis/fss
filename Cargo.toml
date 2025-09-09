@@ -32,7 +32,12 @@ bitvec = "1.0.1"
 aes = { version = "0.8.3", optional = true }
 rayon = { version = "1.7.0", optional = true }
 wide = { version = "0.7.26", optional = true }
-rand = "0.8.5"                                 # "0.8.5"
+rand = "0.8.5"                                         # "0.8.5"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_with = "3"
+serde-byte-array = "0.1.2"
+bincode = { version = "2.0.1", features = ["serde"] }
+anyhow = "1.0.99"
 
 [dev-dependencies]
 rand = { version = "0.8.5", features = ["std", "std_rng"] }

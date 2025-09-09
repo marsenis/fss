@@ -20,7 +20,7 @@ use super::Group;
 macro_rules! decl_int_group {
     ($t:ty, $t_impl:ident) => {
         /// See [`self`].
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
         pub struct $t_impl(pub $t);
 
         impl Add for $t_impl {

@@ -17,7 +17,7 @@ use super::Group;
 macro_rules! decl_int_prime_group {
     ($t:ty, $t_impl:ident) => {
         /// See [`self`].
-        #[derive(Debug, Clone, PartialEq, Eq)]
+        #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
         pub struct $t_impl<const MOD: $t>(
             /// Always less than `MOD`.
             $t,
