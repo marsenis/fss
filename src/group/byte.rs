@@ -15,7 +15,7 @@ use super::Group;
 use crate::utils::xor_inplace;
 
 /// See [`self`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct ByteGroup<const BLEN: usize>(#[serde(with = "serde_byte_array")] pub [u8; BLEN]);
 
 impl<const BLEN: usize> Add for ByteGroup<BLEN> {
@@ -56,6 +56,44 @@ impl<const BLEN: usize> From<[u8; BLEN]> for ByteGroup<BLEN> {
 impl<const BLEN: usize> From<ByteGroup<BLEN>> for [u8; BLEN] {
     fn from(value: ByteGroup<BLEN>) -> Self {
         value.0
+    }
+}
+
+impl From<bool> for ByteGroup<16> {
+    fn from(value: bool) -> Self {
+        if value {
+            Self::one()
+        } else {
+            Self::zero()
+        }
+    }
+}
+
+impl From<u128> for ByteGroup<16> {
+    fn from(value: u128) -> Self {
+        let mut bytes = [0_u8; 16];
+        let mask: u128 = (1_u128 << 8) - 1;
+
+        for i in 0..16 {
+            bytes[i] = ((value & (mask << (i * 8))) >> (i * 8)) as u8;
+        }
+
+        Self::from(bytes)
+    }
+}
+
+impl ByteGroup<16> {
+    /// Returns the maximum element `2^n - 1`.
+    pub const fn max() -> Self {
+        Self([u8::max_value(); 16])
+    }
+
+    /// Returns the canonical non-zero element of the group.
+    /// Since this is an additive group, there is no predefined notion of multiplicative
+    /// identity, so we provide it through this custom method for the integer groups,
+    /// instead of as a method of the `Group` trait.
+    pub const fn one() -> Self {
+        Self([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     }
 }
 

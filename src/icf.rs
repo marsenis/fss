@@ -9,15 +9,26 @@ use crate::{
 
 use anyhow::{anyhow, bail, Result};
 
-/// Work in `Z_{32}`, or 4 byte wide integers.
-pub const NUM_BYTES: usize = 4;
+/// Input domain is `U_{2^32} ~= Z_{2^32}`, or 4 byte wide integers.
+pub const N_BYTES: usize = 4;
 
-/// The Integer Group structure for `Z_32`.
-pub type IntG = crate::group::int::U32Group;
+/// Security constant in bits.
+pub const LAMBDA: usize = 128;
+/// Security constant in bytes. Using the same name expected within the [crate::dcf] module.
+pub const OUT_BLEN: usize = LAMBDA / 8;
+
+/// Needed only for cipher construction.
+const OUT_BLEN_N: usize = 2;
+const CIPHER_N: usize = (OUT_BLEN / 16) * OUT_BLEN_N * 2;
+
+/// The Integer Group structure of the output is `Z_{2^lambda}`.
+pub type IntG = crate::group::int::U128Group;
+// pub type IntG = crate::group::byte::ByteGroup<OUT_BLEN>;
 
 /// The Rust-equivalent primitive type for `IntG`
-type IntGPrimitive = u32;
+type IntGPrimitive = u128;
 
+/// Splits a single DCF key into the two keys `k0` and `k1` to be sent to each party.
 pub fn split_keys<const OUT_BLEN: usize, G>(
     keys: Share<OUT_BLEN, G>,
 ) -> (Share<OUT_BLEN, G>, Share<OUT_BLEN, G>)
@@ -36,7 +47,7 @@ where
 /// A key-share for the Interval Containment Function.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IcShare {
-    pub dcf_share: Share<NUM_BYTES, IntG>,
+    pub dcf_share: Share<OUT_BLEN, IntG>,
     pub z: IntG,
 }
 
@@ -108,27 +119,29 @@ pub struct IntvFn {
 /// appropriate size.
 pub struct Icf<P>
 where
-    P: Prg<NUM_BYTES, 2>,
+    P: Prg<OUT_BLEN, 2>,
 {
     p: IntG,
     q: IntG,
-    dcf: DcfImpl<NUM_BYTES, NUM_BYTES, P>,
+    dcf: DcfImpl<OUT_BLEN, OUT_BLEN, P>,
 }
 
 impl<P> Icf<P>
 where
-    P: Prg<NUM_BYTES, 2>,
+    P: Prg<OUT_BLEN, 2>,
 {
     pub fn new(p: IntG, q: IntG, prg: P) -> Self {
+        assert!(p <= q);
         Self {
             p,
             q,
-            dcf: DcfImpl::<NUM_BYTES, NUM_BYTES, P>::new(prg),
+            // dcf: DcfImpl::<OUT_BLEN, OUT_BLEN, P>::new_with_filter(prg, N_BYTES),
+            dcf: DcfImpl::<OUT_BLEN, OUT_BLEN, P>::new(prg),
         }
     }
 
     pub fn gen(&self, f: IntvFn, rng: &mut ThreadRng) -> (IcShare, IcShare) {
-        let s0s: [[u8; NUM_BYTES]; 2] = rng.gen();
+        let s0s: [[u8; OUT_BLEN]; 2] = rng.gen();
 
         let gamma = f.r_in + IntG::max();
 
@@ -149,7 +162,6 @@ where
 
         let z0 = IntG::from(rng.gen::<IntGPrimitive>());
 
-        // TODO: Implement comparison for group elements.
         let ind_1 = IntG::from(a_p > a_q);
         let ind_2 = IntG::from(a_p > self.p);
         let ind_3 = IntG::from(a_q_prime > q_prime);
@@ -172,7 +184,7 @@ where
     pub fn eval(&self, b: bool, k: &IcShare, x: IntG) -> IntG {
         let q_prime = self.q + IntG::one();
 
-        let zero = <IntG as Group<NUM_BYTES>>::zero();
+        let zero = <IntG as Group<OUT_BLEN>>::zero();
 
         let x_p = x + IntG::max() + -self.p;
         let mut s_b_p = zero;
@@ -192,5 +204,49 @@ where
         let ind_2 = IntG::from(x > q_prime);
 
         (if b { ind_1 + -ind_2 } else { zero }) + -s_b_p + s_b_q_prime + k.z
+    }
+}
+
+#[cfg(all(test, feature = "prg"))]
+mod tests {
+    use arbtest::arbtest;
+
+    use super::*;
+    use crate::prg::Aes128MatyasMeyerOseasPrg;
+
+    #[test]
+    fn test_correctness() {
+        arbtest(|u| {
+            let keys: [[u8; OUT_BLEN]; CIPHER_N] = u.arbitrary()?;
+            let prg = Aes128MatyasMeyerOseasPrg::<OUT_BLEN, OUT_BLEN_N, CIPHER_N>::new(
+                &std::array::from_fn(|i| &keys[i]),
+            );
+            let a = u.arbitrary::<u128>()?;
+            let b = u.arbitrary::<u128>()?;
+            let p = IntG::from(std::cmp::min(a, b));
+            let q = IntG::from(std::cmp::max(a, b));
+
+            let icf = Icf::new(p, q, prg);
+
+            let r_in = IntG::from(u.arbitrary::<u128>()?);
+            let r_out = IntG::from(u.arbitrary::<u128>()?);
+
+            let f = IntvFn { r_in, r_out };
+
+            let mut rng = rand::thread_rng();
+
+            let (k0, k1) = icf.gen(f, &mut rng);
+
+            let x = IntG::from(u.arbitrary::<u128>()?);
+
+            let y0 = icf.eval(false, &k0, x);
+            let y1 = icf.eval(true, &k1, x);
+
+            let res = y0 + y1;
+
+            assert!(res == IntG::zero() || res == IntG::one() + r_out);
+
+            Ok(())
+        });
     }
 }
