@@ -11,7 +11,7 @@ use serde_with::serde_as;
 
 use anyhow::{bail, Result};
 
-use crate::group::byte::ByteGroup;
+use crate::{group::byte::ByteGroup, icf::OutG};
 
 pub mod dcf;
 pub mod dpf;
@@ -61,6 +61,15 @@ where
     pub tr: bool,
 }
 
+impl<const OUT_BLEN: usize, G> Cw<OUT_BLEN, G>
+where
+    G: Group<OUT_BLEN>,
+{
+    pub fn num_bits(&self) -> usize {
+        OUT_BLEN * 8 + size_of::<G>() * 8 + 1 + 1
+    }
+}
+
 /// `k`.
 ///
 /// `cws` and `cw_np1` are shared by the 2 parties.
@@ -79,6 +88,17 @@ where
     pub cws: Vec<Cw<OUT_BLEN, G>>,
     /// `$CW^{(n + 1)}$`.
     pub cw_np1: G,
+}
+
+impl<const OUT_BLEN: usize, G> Share<OUT_BLEN, G>
+where
+    G: Group<OUT_BLEN>,
+{
+    pub fn num_bits(&self) -> usize {
+        self.s0s.len() * OUT_BLEN * 8
+            + self.cws.iter().fold(0, |acc, cw| acc + cw.num_bits())
+            + size_of::<G>() * 8
+    }
 }
 
 impl Share<16, ByteGroup<16>> {
