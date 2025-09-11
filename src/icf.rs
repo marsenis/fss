@@ -24,8 +24,8 @@ const CIPHER_N: usize = (OUT_BLEN / 16) * OUT_BLEN_N * 2;
 /// The integer Group structure of the output (the image set of the secret-shared function).
 /// Standard choices include `Z_{2^128}` ([crate::group::int::U128Group]), or `(Z_2)^128`
 /// ([crate::group::byte::ByteGroup]).
-pub type OutG = crate::group::int::U128Group;
-// pub type OutG = crate::group::byte::ByteGroup<OUT_BLEN>;
+// pub type OutG = crate::group::int::U128Group;
+pub type OutG = crate::group::byte::ByteGroup<OUT_BLEN>;
 
 /// The integer Group structure of the input (the domain of the secret-shared function).
 pub type InG = crate::group::int::U32Group;
