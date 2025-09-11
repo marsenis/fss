@@ -125,7 +125,7 @@ where
             };
             let s_cw = xor(&[[&s0l, &s0r][lose], [&s1l, &s1r][lose]]);
             let mut v_cw =
-                (G::from(*[&v0l, &v0r][lose]) + -G::from(*[&v1l, &v1r][lose]) + -v_alpha.clone())
+                (-G::from(*[&v0l, &v0r][lose]) + G::from(*[&v1l, &v1r][lose]) + -v_alpha.clone())
                     .neg_if(ts_prev[1]);
             match f.bound {
                 BoundState::LtAlpha => {
@@ -139,8 +139,7 @@ where
                     }
                 }
             }
-            v_alpha += -G::from(*[&v0l, &v0r][keep])
-                + (*[&v1l, &v1r][keep]).into()
+            v_alpha += -(-G::from(*[&v0l, &v0r][keep]) + (*[&v1l, &v1r][keep]).into())
                 + v_cw.clone().neg_if(ts_prev[1]);
             let tl_cw = t0l ^ t1l ^ alpha_i ^ true;
             let tr_cw = t0r ^ t1r ^ alpha_i;
@@ -320,8 +319,8 @@ mod tests {
     use super::*;
     use crate::prg::Aes128MatyasMeyerOseasPrg;
 
-    // type GroupImpl = crate::group::int::U128Group;
-    type GroupImpl = crate::group::byte::ByteGroup<16>;
+    type GroupImpl = crate::group::int::U128Group;
+    // type GroupImpl = crate::group::byte::ByteGroup<16>;
     type PrgImpl = Aes128MatyasMeyerOseasPrg<16, 2, 4>;
     type DcfImplImpl = DcfImpl<2, 16, PrgImpl>;
 
@@ -434,7 +433,11 @@ mod tests {
             } else {
                 "="
             };
-            assert_eq!(y, y_expected, "where i={}, x={:?}, x{}alpha", i, *x, cmp);
+            assert_eq!(
+                y, y_expected,
+                "where i={}, x={:?}, x{}alpha, alpha = {}",
+                i, *x, cmp, alpha_int
+            );
         }
     }
 }
