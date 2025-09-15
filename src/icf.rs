@@ -188,6 +188,7 @@ where
             z: z1,
         };
 
+        /*
         println!("k0.num_bits() = {}", k0.num_bits());
         println!("k1.num_bits() = {}", k1.num_bits());
 
@@ -199,6 +200,7 @@ where
             "num_bits(serde(k1)) = {}",
             k1.serialize().unwrap().len() * 32
         );
+        */
 
         debug_assert_eq!(IcShare::deserialize(&k0.serialize().unwrap()).unwrap(), k0);
         debug_assert_eq!(IcShare::deserialize(&k1.serialize().unwrap()).unwrap(), k1);
@@ -256,7 +258,7 @@ mod tests {
             let r_in = InG::from(u.arbitrary::<InGPrimitive>()?);
             let r_out = OutG::from(u.arbitrary::<OutGPrimitive>()?);
 
-            println!("r_in = {r_in:?}, r_out = {r_out:?}");
+            // println!("r_in = {r_in:?}, r_out = {r_out:?}");
 
             let f = IntvFn { r_in, r_out };
 
@@ -271,7 +273,7 @@ mod tests {
 
             let res = y0 + y1;
 
-            println!("res = {res:?}, r_out = {r_out:?}");
+            // println!("res = {res:?}, r_out = {r_out:?}");
             assert!(res == r_out || res == OutG::one() + r_out);
 
             Ok(())
