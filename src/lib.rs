@@ -9,7 +9,7 @@ use group::Group;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
-use anyhow::{bail, Result};
+use eyre::{bail, Result};
 
 use crate::{group::byte::ByteGroup, icf::OutG};
 

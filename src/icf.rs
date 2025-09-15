@@ -7,7 +7,7 @@ use crate::{
     Prg, Share,
 };
 
-use anyhow::{anyhow, bail, Result};
+use eyre::{bail, Result};
 
 /// Input domain is `U_{2^32} ~= Z_{2^32}`, or 4 byte wide integers.
 pub const IN_BLEN: usize = 4;

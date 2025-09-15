@@ -37,7 +37,7 @@ serde = { version = "1.0.214", features = ["derive"] }
 serde_with = "3"
 serde-byte-array = "0.1.2"
 bincode = { version = "2.0.1", features = ["serde"] }
-anyhow = "1.0.93"
+eyre = "0.6"
 
 [dev-dependencies]
 rand = { version = "0.8.5", features = ["std", "std_rng"] }
