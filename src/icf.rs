@@ -1,4 +1,5 @@
 use rand::{rngs::ThreadRng, Rng};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -213,19 +214,49 @@ where
 
         let out_zero = <OutG as Group<OUT_BLEN>>::zero();
 
-        let x_p = x + InG::max() + -self.p;
-        let mut s_b_p = out_zero;
-        self.dcf
-            .eval(b, &k.dcf_share, &[&x_p.into()], &mut [&mut s_b_p]);
+        let (s_b_p, s_b_q_prime) = if cfg!(not(feature = "multi-thread")) {
+            let x_p = x + InG::max() + -self.p;
+            let mut s_b_p = out_zero;
+            self.dcf
+                .eval(b, &k.dcf_share, &[&x_p.into()], &mut [&mut s_b_p]);
 
-        let x_q_prime = x + InG::max() + -q_prime;
-        let mut s_b_q_prime = out_zero;
-        self.dcf.eval(
-            b,
-            &k.dcf_share,
-            &[&x_q_prime.into()],
-            &mut [&mut s_b_q_prime],
-        );
+            let x_q_prime = x + InG::max() + -q_prime;
+            let mut s_b_q_prime = out_zero;
+            self.dcf.eval(
+                b,
+                &k.dcf_share,
+                &[&x_q_prime.into()],
+                &mut [&mut s_b_q_prime],
+            );
+
+            (s_b_p, s_b_q_prime)
+        } else {
+            let res: Vec<OutG> = (0..2)
+                .into_par_iter()
+                .map(|idx| {
+                    if idx == 0 {
+                        let x_p = x + InG::max() + -self.p;
+                        let mut s_b_p = out_zero;
+                        self.dcf
+                            .eval(b, &k.dcf_share, &[&x_p.into()], &mut [&mut s_b_p]);
+                        s_b_p
+                    } else {
+                        let x_q_prime = x + InG::max() + -q_prime;
+                        let mut s_b_q_prime = out_zero;
+                        self.dcf.eval(
+                            b,
+                            &k.dcf_share,
+                            &[&x_q_prime.into()],
+                            &mut [&mut s_b_q_prime],
+                        );
+                        s_b_q_prime
+                    }
+                })
+                .collect();
+            assert_eq!(res.len(), 2);
+
+            (res[0], res[1])
+        };
 
         let ind_1 = OutG::from(x > self.p);
         let ind_2 = OutG::from(x > q_prime);
