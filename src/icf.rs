@@ -214,7 +214,7 @@ where
 
         let out_zero = <OutG as Group<OUT_BLEN>>::zero();
 
-        let (s_b_p, s_b_q_prime) = if cfg!(not(feature = "multi-thread")) {
+        let (s_b_p, s_b_q_prime) = if cfg!(not(feature = "parallel")) {
             let x_p = x + InG::max() + -self.p;
             let mut s_b_p = out_zero;
             self.dcf

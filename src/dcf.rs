@@ -115,8 +115,29 @@ where
         for i in 0..n {
             // MSB is required since we index from high to low in arrays.
             let alpha_i = f.alpha.view_bits::<Msb0>()[i];
-            let [([s0l, v0l], t0l), ([s0r, v0r], t0r)] = self.prg.gen(&ss_prev[0]);
-            let [([s1l, v1l], t1l), ([s1r, v1r], t1r)] = self.prg.gen(&ss_prev[1]);
+
+            let (pgen0, pgen1) = if cfg!(not(feature = "parallel")) {
+                (self.prg.gen(&&ss_prev[0]), self.prg.gen(&&ss_prev[1]))
+            } else {
+                let res: Vec<_> = (0..2)
+                    .into_par_iter()
+                    .map(|idx| {
+                        if idx == 0 {
+                            self.prg.gen(&&ss_prev[0])
+                        } else {
+                            self.prg.gen(&&ss_prev[1])
+                        }
+                    })
+                    .collect();
+
+                assert_eq!(res.len(), 2);
+
+                (res[0], res[1])
+            };
+
+            let [([s0l, v0l], t0l), ([s0r, v0r], t0r)] = pgen0;
+            let [([s1l, v1l], t1l), ([s1r, v1r], t1r)] = pgen1;
+
             // MSB is required since we index from high to low in arrays.
             let (keep, lose) = if alpha_i {
                 (IDX_R, IDX_L)

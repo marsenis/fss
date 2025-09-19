@@ -22,6 +22,7 @@ categories = ["cryptography"]
 
 [features]
 default = ["prg", "multi-thread", "stable"]
+parallel = ["ark-std/parallel"]
 prg = ["aes"]
 multi-thread = ["rayon"]
 stable = ["wide"]
