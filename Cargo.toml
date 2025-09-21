@@ -27,6 +27,7 @@ prg = ["aes"]
 multi-thread = ["rayon"]
 stable = ["wide"]
 int-be = []
+print-trace = ["ark-std/print-trace"]
 
 [dependencies]
 bitvec = "1.0.1"

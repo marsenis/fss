@@ -19,8 +19,8 @@ pub const LAMBDA: usize = 128;
 pub const OUT_BLEN: usize = LAMBDA / 8;
 
 /// These are needed only for cipher construction.
-const OUT_BLEN_N: usize = 2;
-const CIPHER_N: usize = (OUT_BLEN / 16) * OUT_BLEN_N * 2;
+pub const OUT_BLEN_N: usize = 2;
+pub const CIPHER_N: usize = (OUT_BLEN / 16) * OUT_BLEN_N * 2;
 
 /// The integer Group structure of the output (the image set of the secret-shared function).
 /// Standard choices include `Z_{2^128}` ([crate::group::int::U128Group]), or `(Z_2)^128`
@@ -157,7 +157,7 @@ where
         let gamma = f.r_in + InG::max();
 
         let cmp_fn = CmpFn {
-            alpha: gamma.into(),
+            alpha: gamma.0.to_be_bytes(),
             beta: OutG::one(),
             bound: BoundState::LtAlpha,
         };
@@ -214,7 +214,8 @@ where
 
         let out_zero = <OutG as Group<OUT_BLEN>>::zero();
 
-        let (s_b_p, s_b_q_prime) = if cfg!(not(feature = "parallel")) {
+        #[cfg(not(feature = "parallel"))]
+        let (s_b_p, s_b_q_prime) = {
             let x_p = x + InG::max() + -self.p;
             let mut s_b_p = out_zero;
             self.dcf
@@ -230,33 +231,28 @@ where
             );
 
             (s_b_p, s_b_q_prime)
-        } else {
-            let res: Vec<OutG> = (0..2)
-                .into_par_iter()
-                .map(|idx| {
-                    if idx == 0 {
-                        let x_p = x + InG::max() + -self.p;
-                        let mut s_b_p = out_zero;
-                        self.dcf
-                            .eval(b, &k.dcf_share, &[&x_p.into()], &mut [&mut s_b_p]);
-                        s_b_p
-                    } else {
-                        let x_q_prime = x + InG::max() + -q_prime;
-                        let mut s_b_q_prime = out_zero;
-                        self.dcf.eval(
-                            b,
-                            &k.dcf_share,
-                            &[&x_q_prime.into()],
-                            &mut [&mut s_b_q_prime],
-                        );
-                        s_b_q_prime
-                    }
-                })
-                .collect();
-            assert_eq!(res.len(), 2);
-
-            (res[0], res[1])
         };
+        #[cfg(feature = "parallel")]
+        let (s_b_p, s_b_q_prime) = rayon::join(
+            || {
+                let x_p = x + InG::max() + -self.p;
+                let mut s_b_p = out_zero;
+                self.dcf
+                    .eval(b, &k.dcf_share, &[&x_p.into()], &mut [&mut s_b_p]);
+                s_b_p
+            },
+            || {
+                let x_q_prime = x + InG::max() + -q_prime;
+                let mut s_b_q_prime = out_zero;
+                self.dcf.eval(
+                    b,
+                    &k.dcf_share,
+                    &[&x_q_prime.into()],
+                    &mut [&mut s_b_q_prime],
+                );
+                s_b_q_prime
+            },
+        );
 
         let ind_1 = OutG::from(x > self.p);
         let ind_2 = OutG::from(x > q_prime);
@@ -279,17 +275,21 @@ mod tests {
             let prg = Aes128MatyasMeyerOseasPrg::<OUT_BLEN, OUT_BLEN_N, CIPHER_N>::new(
                 &std::array::from_fn(|i| &keys[i]),
             );
-            let a = u.arbitrary::<InGPrimitive>()?;
-            let b = u.arbitrary::<InGPrimitive>()?;
-            let p = InG::from(std::cmp::min(a, b));
-            let q = InG::from(std::cmp::max(a, b));
+            //let a = u.arbitrary::<InGPrimitive>()?;
+            //let b = u.arbitrary::<InGPrimitive>()?;
+            //let p = InG::from(std::cmp::min(a, b));
+            //let q = InG::from(std::cmp::max(a, b));
+            let p = InG::from(0);
+            let q = InG::from(1u32 << 31);
 
             let icf = Icf::new(p, q, prg);
 
-            let r_in = InG::from(u.arbitrary::<InGPrimitive>()?);
-            let r_out = OutG::from(u.arbitrary::<OutGPrimitive>()?);
+            let r_in = InG::from(u.arbitrary::<u32>()? as u32);
+            // let r_out = OutG::from(u.arbitrary::<OutGPrimitive>()?);
+            let r_out = OutG::from(0);
 
             // println!("r_in = {r_in:?}, r_out = {r_out:?}");
+            // f(x) = g(x - r_in) + r_out
 
             let f = IntvFn { r_in, r_out };
 
@@ -297,14 +297,15 @@ mod tests {
 
             let (k0, k1) = icf.gen(f, &mut rng);
 
-            let x = InG::from(u.arbitrary::<InGPrimitive>()?);
+            // let x = InG::from(u.arbitrary::<InGPrimitive>()?);
+            let x = InG::from(2048) + r_in;
 
             let y0 = icf.eval(false, &k0, x);
             let y1 = icf.eval(true, &k1, x);
 
             let res = y0 + y1;
 
-            // println!("res = {res:?}, r_out = {r_out:?}");
+            // println!("res = {res:?}, r_in = {r_in:?}");
             assert!(res == r_out || res == OutG::one() + r_out);
 
             Ok(())

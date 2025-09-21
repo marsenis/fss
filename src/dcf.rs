@@ -3,6 +3,7 @@
 
 //! See [`Dcf`].
 
+use ark_std::{end_timer, start_timer};
 use bitvec::prelude::*;
 #[cfg(feature = "multi-thread")]
 use rayon::prelude::*;
@@ -116,24 +117,19 @@ where
             // MSB is required since we index from high to low in arrays.
             let alpha_i = f.alpha.view_bits::<Msb0>()[i];
 
-            let (pgen0, pgen1) = if cfg!(not(feature = "parallel")) {
-                (self.prg.gen(&&ss_prev[0]), self.prg.gen(&&ss_prev[1]))
-            } else {
-                let res: Vec<_> = (0..2)
-                    .into_par_iter()
-                    .map(|idx| {
-                        if idx == 0 {
-                            self.prg.gen(&&ss_prev[0])
-                        } else {
-                            self.prg.gen(&&ss_prev[1])
-                        }
-                    })
-                    .collect();
+            let prg_timer = start_timer!(|| "PRG");
 
-                assert_eq!(res.len(), 2);
+            /*
+            #[cfg(feature = "parallel")]
+            let (pgen0, pgen1) =
+                rayon::join(|| self.prg.gen(&ss_prev[0]), || self.prg.gen(&ss_prev[1]));
+            #[cfg(not(feature = "parallel"))]
+            */
+            // Always use the sequential method. Benchmarks indicate that the parallel version is
+            // prohibitedly expensive.
+            let (pgen0, pgen1) = (self.prg.gen(&&ss_prev[0]), self.prg.gen(&&ss_prev[1]));
 
-                (res[0], res[1])
-            };
+            end_timer!(prg_timer);
 
             let [([s0l, v0l], t0l), ([s0r, v0r], t0r)] = pgen0;
             let [([s1l, v1l], t1l), ([s1r, v1r], t1r)] = pgen1;
