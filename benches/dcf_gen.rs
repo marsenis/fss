@@ -44,11 +44,12 @@ fn from_domain_range_size<const IN_BLEN: usize, const OUT_BLEN: usize, const CIP
 }
 
 fn bench(c: &mut Criterion) {
-    from_domain_range_size::<16, 16, 4>(c);
-    from_domain_range_size::<24, 16, 4>(c);
-    from_domain_range_size::<32, 16, 4>(c);
-    from_domain_range_size::<16, 256, 64>(c);
-    from_domain_range_size::<16, 16384, 4096>(c);
+    from_domain_range_size::<4, 16, 4>(c);
+    // from_domain_range_size::<16, 16, 4>(c);
+    // from_domain_range_size::<24, 16, 4>(c);
+    // from_domain_range_size::<32, 16, 4>(c);
+    // from_domain_range_size::<16, 256, 64>(c);
+    // from_domain_range_size::<16, 16384, 4096>(c);
 }
 
 criterion_group!(benches, bench);

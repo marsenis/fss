@@ -7,6 +7,8 @@ bench = [
   { name = "dpf_eval", harness = false },
   { name = "dpf_eval_batch", harness = false },
   { name = "dpf_full_eval", harness = false },
+  { name = "icf_gen", harness = false },
+  { name = "icf_eval", harness = false },
 ]
 
 [package]
