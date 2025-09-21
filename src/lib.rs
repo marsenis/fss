@@ -17,6 +17,7 @@ pub mod dcf;
 pub mod dpf;
 pub mod group;
 pub mod icf;
+pub mod icf_fig2;
 #[cfg(feature = "prg")]
 pub mod prg;
 pub mod utils;
