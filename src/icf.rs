@@ -10,8 +10,8 @@ use crate::{
 
 use eyre::{bail, Result};
 
-/// Input domain is `U_{2^32} ~= Z_{2^32}`, or 4 byte wide integers.
-pub const IN_BLEN: usize = 4;
+/// Input domain is `U_{2^16} ~= Z_{2^16}`, or 2 byte wide integers.
+pub const IN_BLEN: usize = 2;
 
 /// Security constant in bits.
 pub const LAMBDA: usize = 128;
@@ -29,10 +29,10 @@ pub const CIPHER_N: usize = (OUT_BLEN / 16) * OUT_BLEN_N * 2;
 pub type OutG = crate::group::byte::ByteGroup<OUT_BLEN>;
 
 /// The integer Group structure of the input (the domain of the secret-shared function).
-pub type InG = crate::group::int::U32Group;
+pub type InG = crate::group::int::U16Group;
 
 /// The Rust-equivalent integer primitive types for [InG] and [OutG].
-type InGPrimitive = u32;
+type InGPrimitive = u16;
 type OutGPrimitive = u128;
 
 /// Splits a single DCF key into the two keys `k0` and `k1` to be sent to each party.
@@ -280,11 +280,11 @@ mod tests {
             //let p = InG::from(std::cmp::min(a, b));
             //let q = InG::from(std::cmp::max(a, b));
             let p = InG::from(0);
-            let q = InG::from(1u32 << 31);
+            let q = InG::from(1u16 << 15);
 
             let icf = Icf::new(p, q, prg);
 
-            let r_in = InG::from(u.arbitrary::<u32>()? as u32);
+            let r_in = InG::from(u.arbitrary::<u16>()? as u16);
             // let r_out = OutG::from(u.arbitrary::<OutGPrimitive>()?);
             let r_out = OutG::from(0);
 

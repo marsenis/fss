@@ -17,7 +17,7 @@ fn from_domain_range_size(c: &mut Criterion) {
     let prg = Aes128MatyasMeyerOseasPrg::<OUT_BLEN, OUT_BLEN_N, CIPHER_N>::new(&keys_iter);
 
     let p = InG::zero();
-    let q = InG::from((1u32 << 31) - 1);
+    let q = InG::from((1u16 << 15) - 1);
     let icf = Icf::new(p, q, prg);
 
     let mut s0s = [[0; OUT_BLEN]; 2];
