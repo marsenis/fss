@@ -59,6 +59,19 @@ pub struct IcShare {
 }
 
 impl IcShare {
+    pub fn serialize_u8(&self) -> Result<Vec<u8>> {
+        let bincode_config = bincode::config::standard();
+        let bytes = bincode::serde::encode_to_vec(&self, bincode_config)?;
+        Ok(bytes)
+    }
+
+    /// Deserialize from a byte vector (inverse of `serialize_u8`).
+    pub fn deserialize_u8(data: &[u8]) -> Result<Self> {
+        let bincode_config = bincode::config::standard();
+        let (share, _size) = bincode::serde::decode_from_slice(&data, bincode_config)?;
+        Ok(share)
+    }
+
     /// Serialize the share into a vector of 32-bit words.
     pub fn serialize(&self) -> Result<Vec<u32>> {
         let bincode_config = bincode::config::standard();
