@@ -1,4 +1,4 @@
-use rand::{rngs::ThreadRng, Rng};
+use rand::{rngs::StdRng, Rng};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -153,7 +153,7 @@ where
         }
     }
 
-    pub fn gen(&self, f: IntvFnFig2, rng: &mut ThreadRng) -> (IcShareFig2, IcShareFig2) {
+    pub fn gen(&self, f: IntvFnFig2, rng: &mut StdRng) -> (IcShareFig2, IcShareFig2) {
         let s0s: [[u8; OUT_BLEN]; 4] = rng.gen();
 
         let alpha_p = f.r_in + self.p;

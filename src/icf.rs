@@ -1,4 +1,4 @@
-use rand::{rngs::ThreadRng, Rng};
+use rand::{rngs::StdRng, Rng};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 
@@ -59,13 +59,14 @@ pub struct IcShare {
 }
 
 impl IcShare {
+    //Serialize into u8 instead of u32
     pub fn serialize_u8(&self) -> Result<Vec<u8>> {
         let bincode_config = bincode::config::standard();
         let bytes = bincode::serde::encode_to_vec(&self, bincode_config)?;
         Ok(bytes)
     }
 
-    /// Deserialize from a byte vector (inverse of `serialize_u8`).
+    /// Deserialize from a byte vector
     pub fn deserialize_u8(data: &[u8]) -> Result<Self> {
         let bincode_config = bincode::config::standard();
         let (share, _size) = bincode::serde::decode_from_slice(&data, bincode_config)?;
@@ -164,7 +165,7 @@ where
         }
     }
 
-    pub fn gen(&self, f: IntvFn, rng: &mut ThreadRng) -> (IcShare, IcShare) {
+    pub fn gen(&self, f: IntvFn, rng: &mut StdRng) -> (IcShare, IcShare) {
         let s0s: [[u8; OUT_BLEN]; 2] = rng.gen();
 
         let gamma = f.r_in + InG::max();
